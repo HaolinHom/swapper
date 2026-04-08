@@ -1,36 +1,10 @@
+import { parseExportedTypes } from './type-parser.js';
+
 /**
  * 从现有文件中解析出类型定义
  */
 export function parseExistingTypes(content) {
-  const types = new Map();
-  const typeOrder = []; // 保留类型定义的顺序
-
-  if (!content) return { types, typeOrder };
-
-  // 匹配所有 export interface 和 export type
-  const exportRegex = /export\s+(interface\s+\w+\s*\{[^}]*\}|type\s+\w+\s*=\s*[^;]+;)/gs;
-  const matches = [];
-  let match;
-
-  while ((match = exportRegex.exec(content)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      fullMatch: match[0]
-    });
-  }
-
-  // 提取类型定义
-  for (const m of matches) {
-    const typeNameMatch = m.fullMatch.match(/(?:interface|type)\s+(\w+)/);
-    if (typeNameMatch) {
-      const typeName = typeNameMatch[1];
-      types.set(typeName, m.fullMatch);
-      typeOrder.push(typeName);
-    }
-  }
-
-  return { types, typeOrder };
+  return parseExportedTypes(content);
 }
 
 /**
@@ -81,7 +55,7 @@ export function mergeTypes(existingContent, newTypesContent) {
   const lines = ['// 类型定义\n'];
 
   for (const name of resultOrder) {
-    const type = existingTypes.get(name) || newTypes.get(name);
+    const type = newTypes.get(name) || existingTypes.get(name);
     if (type) {
       lines.push(type);
       lines.push('');
@@ -94,7 +68,7 @@ export function mergeTypes(existingContent, newTypesContent) {
 /**
  * 合并函数定义
  */
-export function mergeFunctions(existingContent, newFunctionsContent, requestImport) {
+export function mergeFunctions(existingContent, newFunctionsContent, requestImport, allTypeNames = new Set()) {
   const existingFunctions = parseExistingFunctions(existingContent);
   const newFunctions = parseExistingFunctions(newFunctionsContent);
 
@@ -111,13 +85,37 @@ export function mergeFunctions(existingContent, newFunctionsContent, requestImpo
   const sortedFunctions = [...existingFunctions.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   const lines = [];
 
-  // 提取类型导入
+  // 提取类型导入 - 从函数签名中提取所有可能的类型名
   const typeImports = new Set();
-  const funcMatchRegex = /Promise<(\w+)>/g;
+  // 匹配 Promise<...> 中的类型
+  const promiseMatchRegex = /Promise<([^>]+)>/g;
+  // 匹配参数类型如 data?: TypeName, params?: TypeName
+  const paramMatchRegex = /(?:data|params|body)\?:\s*(\w+)/g;
+  // 匹配其他参数类型如 id: TypeName, path?: TypeName
+  const otherParamMatchRegex = /(?:id|path|data|params|body)\s*\??:\s*(\w+)/g;
+
   for (const [, func] of sortedFunctions) {
     let match;
-    while ((match = funcMatchRegex.exec(func)) !== null) {
-      typeImports.add(match[1]);
+    // 从 Promise 中提取
+    while ((match = promiseMatchRegex.exec(func)) !== null) {
+      const typeName = match[1].trim();
+      if (allTypeNames.has(typeName)) {
+        typeImports.add(typeName);
+      }
+    }
+    // 从参数类型中提取
+    while ((match = paramMatchRegex.exec(func)) !== null) {
+      const typeName = match[1];
+      if (allTypeNames.has(typeName)) {
+        typeImports.add(typeName);
+      }
+    }
+    // 从其他参数类型中提取
+    while ((match = otherParamMatchRegex.exec(func)) !== null) {
+      const typeName = match[1];
+      if (allTypeNames.has(typeName)) {
+        typeImports.add(typeName);
+      }
     }
   }
 

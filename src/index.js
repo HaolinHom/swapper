@@ -37,7 +37,7 @@ async function main() {
 
     // 生成代码
     console.log('正在生成代码...');
-    const { typesCode, functionsCode } = await generate(parsed, {
+    const { typesCode, functionsCode, allTypeNames } = await generate(parsed, {
       requestImport: options.request,
       outType: options.outType,
       prefix: options.prefix
@@ -63,7 +63,7 @@ async function main() {
       const existingFunctions = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, 'utf-8') : '';
 
       const mergedTypes = mergeTypes(existingTypes, typesCode);
-      const mergedFunctions = mergeFunctions(existingFunctions, functionsCode, options.request);
+      const mergedFunctions = mergeFunctions(existingFunctions, functionsCode, options.request, allTypeNames);
 
       fs.writeFileSync(typesPath, mergedTypes);
       fs.writeFileSync(indexPath, mergedFunctions);
