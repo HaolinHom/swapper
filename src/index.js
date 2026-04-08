@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { fetchSwagger, parseSwagger } from './swagger.js';
 import { generate } from './generator.js';
+import { mergeTypes, mergeFunctions, parseExistingTypes } from './merger.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -14,7 +15,8 @@ program
   .requiredOption('-d, --dir <dir>', '生成文件存放目录')
   .requiredOption('-r, --request <request>', '请求函数导入语句')
   .option('--out-type <type>', '生成文件类型', 'ts')
-  .option('-p, --prefix <prefix>', 'URL前缀，生成的接口URL会拼接此前缀');
+  .option('-p, --prefix <prefix>', 'URL前缀，生成的接口URL会拼接此前缀')
+  .option('--force', '全量覆盖，不进行增量合并');
 
 program.parse();
 
@@ -47,15 +49,32 @@ async function main() {
       fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    // 写入 types.ts
     const typesPath = path.join(dirPath, 'types.ts');
-    fs.writeFileSync(typesPath, typesCode);
-
-    // 写入 index.ts
     const indexPath = path.join(dirPath, 'index.ts');
-    fs.writeFileSync(indexPath, functionsCode);
 
-    console.log(`生成成功: ${typesPath}, ${indexPath}`);
+    if (options.force) {
+      // 全量覆盖
+      fs.writeFileSync(typesPath, typesCode);
+      fs.writeFileSync(indexPath, functionsCode);
+      console.log(`生成成功: ${typesPath}, ${indexPath}`);
+    } else {
+      // 增量合并
+      const existingTypes = fs.existsSync(typesPath) ? fs.readFileSync(typesPath, 'utf-8') : '';
+      const existingFunctions = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, 'utf-8') : '';
+
+      const mergedTypes = mergeTypes(existingTypes, typesCode);
+      const mergedTypeNames = new Set(parseExistingTypes(mergedTypes).typeOrder);
+      const mergedFunctions = mergeFunctions(
+        existingFunctions,
+        functionsCode,
+        options.request,
+        mergedTypeNames
+      );
+
+      fs.writeFileSync(typesPath, mergedTypes);
+      fs.writeFileSync(indexPath, mergedFunctions);
+      console.log(`增量更新成功: ${typesPath}, ${indexPath}`);
+    }
   } catch (error) {
     console.error('生成失败:', error.message);
     process.exit(1);

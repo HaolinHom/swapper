@@ -1,4 +1,5 @@
 import prettier from 'prettier';
+import { extractExportedTypeNames } from './type-parser.js';
 
 /**
  * 生成代码
@@ -40,17 +41,12 @@ export async function generate(parsed, options) {
 
   // 生成类型导入语句 - 从 typesCode 中提取所有类型名
   let importStatements = `${requestImport}\n\n`;
+  const allTypeNames = new Set();
   if (isTs) {
-    const allTypes = [];
-    const interfaceMatches = typesCode.matchAll(/export interface (\w+)/g);
-    const typeMatches = typesCode.matchAll(/export type (\w+)/g);
-    for (const match of interfaceMatches) {
-      allTypes.push(match[1]);
+    const uniqueTypeNames = extractExportedTypeNames(typesCode);
+    for (const typeName of uniqueTypeNames) {
+      allTypeNames.add(typeName);
     }
-    for (const match of typeMatches) {
-      allTypes.push(match[1]);
-    }
-    const uniqueTypeNames = [...new Set(allTypes)];
     if (uniqueTypeNames.length > 0) {
       importStatements += `import type { ${uniqueTypeNames.join(', ')} } from './types';\n\n`;
     }
@@ -62,7 +58,8 @@ export async function generate(parsed, options) {
 
   return {
     typesCode: formattedTypes,
-    functionsCode: formattedFunctions
+    functionsCode: formattedFunctions,
+    allTypeNames
   };
 }
 
@@ -73,9 +70,53 @@ function generateTypeDefinitions(definitions, paths, isTs) {
   const types = [];
   const generatedRefs = new Set();
 
+  // 已知的泛型包装器类型
+  const knownGenericWrappers = new Set(['ResultVo', 'List', 'Pager', 'Set', 'Map', 'Array', 'Optional']);
+
+  // 从泛型字符串中提取 ref 名称，如 ResultVo«List«支付渠道resDto»»
+  const extractRefsFromGenericString = (str) => {
+    if (typeof str !== 'string') return;
+
+    // 使用栈匹配配对的 «» 或 <>
+    const stack = [];
+    let current = '';
+    let i = 0;
+
+    while (i < str.length) {
+      const char = str[i];
+
+      if (char === '«' || char === '<') {
+        stack.push(current);
+        current = '';
+      } else if (char === '»' || char === '>') {
+        if (stack.length > 0) {
+          // 检查 current 是否是 swagger 的 $ref 格式
+          const defMatch = current.match(/^#\/definitions\/(.+)$/);
+          if (defMatch) {
+            generatedRefs.add(defMatch[1]);
+          } else if (!knownGenericWrappers.has(current) && current.trim()) {
+            // 如果不是已知的泛型包装器，且不是空的，则可能是类型名
+            generatedRefs.add(current.trim());
+          }
+          current = stack.pop();
+        }
+      } else {
+        current += char;
+      }
+      i++;
+    }
+  };
+
   // 从路径参数和响应中收集引用的定义
   const collectRefs = (obj) => {
     if (!obj) return;
+
+    // 处理泛型字符串格式（如 ResultVo«List«支付渠道resDto»»）
+    if (typeof obj === 'string') {
+      extractRefsFromGenericString(obj);
+      return;
+    }
+
     if (typeof obj !== 'object') return;
 
     if (obj.$ref) {
@@ -361,6 +402,7 @@ function toPascalCase(str) {
   }
 
   return normalized
+    .replace(/>+$/, '') // 移除末尾多余的 >
     .replace(/-(\w)/g, (_, c) => c ? c.toUpperCase() : '')
     .replace(/^(\w)/, (_, c) => c ? c.toUpperCase() : '');
 }
