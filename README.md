@@ -13,20 +13,30 @@ By default, the generated output is written into two files inside the target dir
 
 ## Installation
 
-```bash
-pnpm install
-```
-
 For local development:
 
 ```bash
-node bin/swapper.js --help
+pnpm install
+
+pnpm link
 ```
 
-If the package has been published to npm, you can also use:
+Install it globally with:
 
 ```bash
-npx swapper --help
+npm install -g @haolin/swapper
+```
+
+Then run the CLI with:
+
+```bash
+swapper --help
+```
+
+You can also run the published package directly with:
+
+```bash
+npx @haolin/swapper --help
 ```
 
 Install the built-in Codex skill:

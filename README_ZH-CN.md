@@ -13,20 +13,30 @@
 
 ## 安装
 
+本地开发安装：
+
 ```bash
 pnpm install
+
+pnpm link
 ```
 
-本地开发执行：
+全局安装命令为：
 
 ```bash
-node bin/swapper.js --help
+npm install -g @haolin/swapper
 ```
 
-如果已经发布到 npm，也可以这样使用：
+运行 CLI 命令：
 
 ```bash
-npx swapper --help
+swapper --help
+```
+
+也可以直接运行已发布的包：
+
+```bash
+npx @haolin/swapper --help
 ```
 
 安装内置 Codex skill：
