@@ -24,7 +24,7 @@ pnpm link
 全局安装命令为：
 
 ```bash
-npm install -g @haolin/swapper
+npm install -g @aircan/swapper
 ```
 
 运行 CLI 命令：
@@ -36,7 +36,7 @@ swapper --help
 也可以直接运行已发布的包：
 
 ```bash
-npx @haolin/swapper --help
+npx @aircan/swapper --help
 ```
 
 安装内置 Codex skill：

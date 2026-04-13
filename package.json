@@ -1,5 +1,5 @@
 {
-  "name": "@haolin/swapper",
+  "name": "@aircan/swapper",
   "version": "1.0.0",
   "description": "A CLI tool for generating TypeScript API functions and type definitions from Swagger/OpenAPI documents.",
   "type": "module",

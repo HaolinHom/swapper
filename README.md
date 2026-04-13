@@ -24,7 +24,7 @@ pnpm link
 Install it globally with:
 
 ```bash
-npm install -g @haolin/swapper
+npm install -g @aircan/swapper
 ```
 
 Then run the CLI with:
@@ -36,7 +36,7 @@ swapper --help
 You can also run the published package directly with:
 
 ```bash
-npx @haolin/swapper --help
+npx @aircan/swapper --help
 ```
 
 Install the built-in Codex skill:
