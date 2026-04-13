@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate Swagger Types"
+  short_description: "用 swapper 从 Swagger 生成 TS 接口"
+  default_prompt: "Use $generate-swagger-types to generate or update TypeScript API files from a Swagger/OpenAPI document."
