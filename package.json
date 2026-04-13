@@ -1,12 +1,19 @@
 {
   "name": "swapper",
-  "version": "1.0.0",
-  "description": "从swagger生成ts接口定义的命令行工具",
+  "version": "1.1.0",
+  "description": "A CLI tool for generating TypeScript API functions and type definitions from Swagger/OpenAPI documents.",
   "type": "module",
   "main": "src/index.js",
   "bin": {
     "swapper": "bin/swapper.js"
   },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "README.md",
+    "README_ZH-CN.md"
+  ],
   "engines": {
     "node": ">=18"
   },

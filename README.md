@@ -1,43 +1,55 @@
 # swapper
 
-从 Swagger/OpenAPI 文档生成 TypeScript 接口函数和类型定义的命令行工具。
+A CLI tool for generating TypeScript API functions and type definitions from Swagger/OpenAPI documents.
 
-生成结果默认输出到目标目录下的两个文件：
+By default, the generated output is written into two files inside the target directory:
 
-- `types.ts`：类型定义
-- `index.ts`：接口函数
+- `types.ts`: type definitions
+- `index.ts`: API request functions
 
-## 要求
+## Requirements
 
 - Node.js `>= 18`
 
-## 安装
+## Installation
 
 ```bash
 pnpm install
 ```
 
-本地开发执行：
+For local development:
 
 ```bash
 node bin/swapper.js --help
 ```
 
-如果已经发布到 npm，也可以这样使用：
+If the package has been published to npm, you can also use:
 
 ```bash
 npx swapper --help
 ```
 
-## 用法
+Install the built-in Codex skill:
+
+```bash
+swapper install-skill
+```
+
+## Usage
 
 ```bash
 swapper -u <swagger-url> -t <tags> -d <output-dir> -r <request-import> [options]
 ```
 
-### 基础示例
+An explicit subcommand form is also supported:
 
-按 Controller 生成：
+```bash
+swapper generate -u <swagger-url> -t <tags> -d <output-dir> -r <request-import> [options]
+```
+
+### Basic Examples
+
+Generate by controller:
 
 ```bash
 swapper \
@@ -48,7 +60,7 @@ swapper \
   -r "import request from '@/utils/request';"
 ```
 
-按具体接口生成：
+Generate specific endpoints:
 
 ```bash
 swapper \
@@ -59,7 +71,7 @@ swapper \
   -r "import request from '@/utils/request';"
 ```
 
-混合生成：
+Generate a mixed selection:
 
 ```bash
 swapper \
@@ -69,34 +81,64 @@ swapper \
   -r "import { request } from 'umi';"
 ```
 
-## 参数
+## Options
 
-| 参数 | 简写 | 必填 | 默认值 | 说明 |
+| Option | Short | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `--url` | `-u` | 是 | 无 | Swagger 文档地址 |
-| `--tag` | `-t` | 是 | 无 | 需要生成的接口。支持 Controller 名称或 `METHOD-/path`，多个用逗号分隔 |
-| `--dir` | `-d` | 是 | 无 | 输出目录 |
-| `--request` | `-r` | 是 | 无 | 请求函数导入语句 |
-| `--out-type` |  | 否 | `ts` | 生成文件类型，当前支持 `ts`、`js` |
-| `--prefix` | `-p` | 否 | 无 | 给生成的接口地址统一追加前缀 |
-| `--force` |  | 否 | `false` | 全量覆盖输出文件，不做增量合并 |
+| `--url` | `-u` | Yes | None | Swagger document URL |
+| `--tag` | `-t` | Yes | None | Interfaces to generate. Supports controller names or `METHOD-/path`, separated by commas |
+| `--dir` | `-d` | Yes | None | Output directory |
+| `--request` | `-r` | Yes | None | Import statement for the request function |
+| `--out-type` |  | No | `ts` | Output file type. Currently supports `ts` and `js` |
+| `--prefix` | `-p` | No | None | Prefix appended to generated request URLs |
+| `--force` |  | No | `false` | Fully overwrite output files instead of incremental merge |
 
-## 生成行为
+## Install the Skill
 
-默认是增量合并模式：
+Install the bundled `generate-swagger-types` skill into Codex on the current machine:
 
-- 会读取已有的 `types.ts` 和 `index.ts`
-- 新生成的类型会合并进 `types.ts`
-- 新生成的函数会合并进 `index.ts`
-- 已有同名类型和函数会被新的定义覆盖
+```bash
+swapper install-skill
+```
 
-使用 `--force` 时：
+By default, it installs to:
 
-- 直接覆盖目标目录下的 `types.ts` 和 `index.ts`
+```text
+${CODEX_HOME:-~/.codex}/skills/generate-swagger-types
+```
 
-## 输出示例
+Optional flags:
 
-执行：
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--dest` | No | `$CODEX_HOME/skills` or `~/.codex/skills` | Custom skill installation root |
+| `--force` | No | `false` | Overwrite the destination if the skill already exists |
+
+Examples:
+
+```bash
+swapper install-skill --force
+swapper install-skill --dest ~/.codex/skills
+```
+
+Restart Codex after installation so the new skill can be loaded.
+
+## Generation Behavior
+
+Incremental merge is the default mode:
+
+- Existing `types.ts` and `index.ts` files are read first
+- Newly generated types are merged into `types.ts`
+- Newly generated functions are merged into `index.ts`
+- Existing types and functions with the same name are replaced by the latest generated versions
+
+When `--force` is used:
+
+- `types.ts` and `index.ts` in the target directory are overwritten directly
+
+## Output Example
+
+Running:
 
 ```bash
 swapper \
@@ -107,7 +149,7 @@ swapper \
   -r "import request from '@/utils/request';"
 ```
 
-会在 `./api` 下生成：
+will generate:
 
 ```text
 api/
@@ -115,20 +157,20 @@ api/
 └── types.ts
 ```
 
-其中：
+Where:
 
-- `types.ts` 包含响应体、请求体、query 参数等类型定义
-- `index.ts` 包含请求函数和 `import type` 引入
+- `types.ts` contains response, request body, and query parameter type definitions
+- `index.ts` contains request functions and `import type` statements
 
-## 开发
+## Development
 
-查看帮助：
+Show help:
 
 ```bash
 node bin/swapper.js --help
 ```
 
-直接运行：
+Run directly:
 
 ```bash
 node bin/swapper.js \
