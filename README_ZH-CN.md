@@ -45,6 +45,8 @@ npx @aircan/swapper --help
 swapper install-skill
 ```
 
+当 Agent 使用这个 skill 时，预期行为是优先尝试已经全局安装的 `swapper` 命令。如果不确定命令是否可用，应先运行 `swapper --help` 验证，再决定是否回退到仓库内的本地入口。
+
 ## 用法
 
 ```bash
