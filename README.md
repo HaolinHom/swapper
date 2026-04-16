@@ -45,6 +45,8 @@ Install the built-in Codex skill:
 swapper install-skill
 ```
 
+When the skill is used by an agent, the expected execution path is to try the globally installed `swapper` command first. If availability is unclear, verify with `swapper --help` before falling back to a repo-local entrypoint.
+
 ## Usage
 
 ```bash

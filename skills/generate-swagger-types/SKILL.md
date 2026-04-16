@@ -9,6 +9,7 @@ description: Generate or update TypeScript API definitions from Swagger/OpenAPI 
 
 Use the `swapper` CLI to fetch a Swagger/OpenAPI document and generate request functions plus TypeScript types.
 Prefer this skill when the user wants generated API files instead of handwritten wrappers.
+Assume `swapper` may already be installed globally even if the current repo does not contain a local binary or dependency entry.
 
 ## Gather Inputs
 
@@ -34,6 +35,10 @@ Support these selector forms in `--tag`:
 Treat any selector containing `-` as a `METHOD-/path` pair. Treat other selectors as Swagger tag names.
 
 ## Run The CLI
+
+Always try the globally installed command first.
+If availability is unclear, run `swapper --help` to confirm before deciding that the CLI is unavailable.
+Do not give up only because the current project does not contain a local `swapper` dependency or binary.
 
 Prefer the installed command when available:
 
@@ -85,8 +90,10 @@ After generation:
 
 If generation fails, check these points in order:
 
+- Verify whether `swapper --help` succeeds before assuming the CLI is missing
 - Verify the Swagger URL is reachable and returns JSON
 - Verify each selector matches either a Swagger tag or an exact `METHOD-/path`
 - Verify the request import string is valid code for the target project
 - Verify the output directory is correct for the consumer project
+- If the global command is unavailable, retry with `node bin/swapper.js generate ...` only when the current repo actually contains the CLI source
 - Retry with a narrower selector when isolating a bad endpoint
