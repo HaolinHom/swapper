@@ -65,7 +65,7 @@ swapper generate -u <swagger-url> -t <tags> -d <output-dir> -r <request-import> 
 
 ```bash
 swapper \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag activity \
   --dir ./api \
   --prefix /promotion/api \
@@ -76,7 +76,7 @@ swapper \
 
 ```bash
 swapper \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag GET-/calcProcessConfig,POST-/calcProcessConfig \
   --dir ./api \
   --prefix /promotion/api \
@@ -154,7 +154,7 @@ swapper install-skill --dest ~/.codex/skills
 
 ```bash
 swapper \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag activity \
   --dir ./api \
   --prefix /promotion/api \
@@ -186,7 +186,7 @@ node bin/swapper.js --help
 
 ```bash
 node bin/swapper.js \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag activity \
   --dir ./api \
   --prefix /promotion/api \

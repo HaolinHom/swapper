@@ -65,7 +65,7 @@ Generate by controller:
 
 ```bash
 swapper \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag activity \
   --dir ./api \
   --prefix /promotion/api \
@@ -76,7 +76,7 @@ Generate specific endpoints:
 
 ```bash
 swapper \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag GET-/calcProcessConfig,POST-/calcProcessConfig \
   --dir ./api \
   --prefix /promotion/api \
@@ -154,7 +154,7 @@ Running:
 
 ```bash
 swapper \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag activity \
   --dir ./api \
   --prefix /promotion/api \
@@ -186,7 +186,7 @@ Run directly:
 
 ```bash
 node bin/swapper.js \
-  -u https://mep-api-test.ur.com.cn/promotion/api/v2/api-docs \
+  -u https://swagger-page.com/promotion/api/v2/api-docs \
   --tag activity \
   --dir ./api \
   --prefix /promotion/api \
