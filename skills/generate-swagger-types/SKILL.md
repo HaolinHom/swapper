@@ -1,6 +1,6 @@
 ---
 name: generate-swagger-types
-description: Generate or update TypeScript API definitions from Swagger/OpenAPI documents with the `swapper` CLI. Use when Codex needs to pull interfaces from a Swagger URL, generate or refresh `types.ts` and `index.ts`, select controllers or individual `METHOD-/path` endpoints, or choose between incremental merge and full overwrite for generated API files.
+description: Generate or update TypeScript API definitions from Swagger/OpenAPI documents with the `swapper` CLI. Use when Codex or Claude Code needs to pull interfaces from a Swagger URL, generate or refresh `types.ts` and `index.ts`, select controllers or individual `METHOD-/path` endpoints, or choose between incremental merge and full overwrite for generated API files.
 ---
 
 # Generate Swagger Types

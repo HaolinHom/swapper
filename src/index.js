@@ -5,6 +5,7 @@ import { mergeTypes, mergeFunctions, parseExistingTypes } from './merger.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import * as readline from 'node:readline';
 import { fileURLToPath } from 'url';
 
 const program = new Command();
@@ -35,11 +36,13 @@ program
 
 program
   .command('install-skill')
-  .description('安装内置的 Codex skill 到本地 Agent')
-  .option('--dest <dir>', 'skill 安装根目录，默认 $CODEX_HOME/skills 或 ~/.codex/skills')
-  .option('--force', '覆盖已存在的同名 skill')
-  .action(options => {
-    installSkill(options);
+  .description('安装内置 skill 到本地 Agent')
+  .option('-a, --agent <agent>', '目标 Agent：codex 或 claude-code；不指定时终端列表选择')
+  .option('--dest <dir>', 'skill 安装根目录，默认根据 Agent 使用 ~/.codex/skills 或 ~/.claude/skills')
+  .option('--force', '覆盖已存在的同名 skill（默认开启）', true)
+  .option('--no-force', '如果目标 skill 已存在则报错，不覆盖')
+  .action(async options => {
+    await installSkill(options);
   });
 
 program.showHelpAfterError();
@@ -48,9 +51,144 @@ function getBundledSkillDir() {
   return path.resolve(__dirname, '..', 'skills', SKILL_NAME);
 }
 
-function getDefaultSkillRoot() {
-  const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
-  return path.join(codexHome, 'skills');
+const AGENT_CONFIGS = {
+  codex: {
+    displayName: 'Codex',
+    envHome: 'CODEX_HOME',
+    homeDir: '.codex'
+  },
+  'claude-code': {
+    displayName: 'Claude Code',
+    envHome: 'CLAUDE_CONFIG_DIR',
+    homeDir: '.claude'
+  }
+};
+
+const AGENT_CHOICES = [
+  { value: 'codex', label: 'Codex' },
+  { value: 'claude-code', label: 'Claude Code' }
+];
+
+function normalizeAgent(agent) {
+  const normalized = String(agent || 'codex')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/_/g, '-');
+
+  if (normalized === 'claude') {
+    return 'claude-code';
+  }
+
+  if (AGENT_CONFIGS[normalized]) {
+    return normalized;
+  }
+
+  throw new Error(`不支持的 Agent: ${agent}，可选值: codex, claude-code`);
+}
+
+function getDefaultSkillRoot(agent) {
+  const config = AGENT_CONFIGS[agent];
+  const agentHome = process.env[config.envHome] || path.join(os.homedir(), config.homeDir);
+  return path.join(agentHome, 'skills');
+}
+
+async function promptAgent() {
+  return new Promise(resolve => {
+    const input = process.stdin;
+    const output = process.stdout;
+    const wasRaw = input.isRaw;
+    let selectedIndex = 0;
+    let renderedLines = 0;
+
+    const render = () => {
+      if (renderedLines > 0) {
+        output.write(`\x1b[${renderedLines}F\x1b[0J`);
+      }
+
+      const lines = [
+        '请选择要安装 skill 的 Agent（↑/↓ 选择，Enter 确认）:',
+        ...AGENT_CHOICES.map((choice, index) => {
+          const marker = index === selectedIndex ? '❯' : ' ';
+          return `${marker} ${choice.label}`;
+        })
+      ];
+
+      output.write(`${lines.join('\n')}\n`);
+      renderedLines = lines.length;
+    };
+
+    const cleanup = () => {
+      input.off('keypress', onKeypress);
+      if (input.isTTY) {
+        input.setRawMode(Boolean(wasRaw));
+      }
+      input.pause();
+      output.write('\x1b[?25h');
+    };
+
+    const choose = index => {
+      selectedIndex = index;
+      cleanup();
+      const choice = AGENT_CHOICES[selectedIndex];
+      output.write(`已选择: ${choice.label}\n`);
+      resolve(choice.value);
+    };
+
+    const onKeypress = (character, key = {}) => {
+      if (key.ctrl && key.name === 'c') {
+        cleanup();
+        output.write('\n');
+        process.exit(130);
+      }
+
+      if (key.name === 'up' || character === 'k') {
+        selectedIndex = (selectedIndex - 1 + AGENT_CHOICES.length) % AGENT_CHOICES.length;
+        render();
+        return;
+      }
+
+      if (key.name === 'down' || character === 'j') {
+        selectedIndex = (selectedIndex + 1) % AGENT_CHOICES.length;
+        render();
+        return;
+      }
+
+      if (key.name === 'return' || key.name === 'enter') {
+        choose(selectedIndex);
+        return;
+      }
+
+      if (/^\d$/.test(character)) {
+        const choiceIndex = Number(character) - 1;
+        if (AGENT_CHOICES[choiceIndex]) {
+          choose(choiceIndex);
+        }
+      }
+    };
+
+    readline.emitKeypressEvents(input);
+    if (input.isTTY) {
+      input.setRawMode(true);
+    }
+    output.write('\x1b[?25l');
+    input.on('keypress', onKeypress);
+    input.resume();
+    render();
+  });
+}
+
+async function resolveInstallAgent(agent) {
+  if (agent) {
+    return normalizeAgent(agent);
+  }
+
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.log('未指定 Agent 且当前不是交互终端，默认安装到 Codex。');
+    return 'codex';
+  }
+
+  return promptAgent();
 }
 
 async function generateTypes(options) {
@@ -112,29 +250,31 @@ async function generateTypes(options) {
   }
 }
 
-function installSkill(options) {
+async function installSkill(options) {
   try {
+    const agent = await resolveInstallAgent(options.agent);
+    const agentConfig = AGENT_CONFIGS[agent];
     const bundledSkillDir = getBundledSkillDir();
     if (!fs.existsSync(bundledSkillDir)) {
       throw new Error(`未找到内置 skill: ${bundledSkillDir}`);
     }
 
-    const skillRoot = path.resolve(options.dest || getDefaultSkillRoot());
+    const skillRoot = path.resolve(options.dest || getDefaultSkillRoot(agent));
     const targetSkillDir = path.join(skillRoot, SKILL_NAME);
 
     fs.mkdirSync(skillRoot, { recursive: true });
 
     if (fs.existsSync(targetSkillDir)) {
       if (!options.force) {
-        throw new Error(`skill 已存在: ${targetSkillDir}，如需覆盖请使用 --force`);
+        throw new Error(`skill 已存在: ${targetSkillDir}，已启用 --no-force，不覆盖`);
       }
       fs.rmSync(targetSkillDir, { recursive: true, force: true });
     }
 
     fs.cpSync(bundledSkillDir, targetSkillDir, { recursive: true });
 
-    console.log(`skill 安装成功: ${targetSkillDir}`);
-    console.log('请重启 Codex 以加载新 skill。');
+    console.log(`skill 已安装到 ${agentConfig.displayName}: ${targetSkillDir}`);
+    console.log(`请重启 ${agentConfig.displayName} 以加载新 skill。`);
   } catch (error) {
     console.error('安装 skill 失败:', error.message);
     process.exit(1);

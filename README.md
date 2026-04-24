@@ -39,11 +39,13 @@ You can also run the published package directly with:
 npx @aircan/swapper --help
 ```
 
-Install the built-in Codex skill:
+Install the built-in skill for Codex or Claude Code:
 
 ```bash
 swapper install-skill
 ```
+
+The command opens an interactive selector so you can choose Codex or Claude Code with arrow keys.
 
 When the skill is used by an agent, the expected execution path is to try the globally installed `swapper` command first. If availability is unclear, verify with `swapper --help` before falling back to a repo-local entrypoint.
 
@@ -107,33 +109,48 @@ swapper \
 
 ## Install the Skill
 
-Install the bundled `generate-swagger-types` skill into Codex on the current machine:
+Install the bundled `generate-swagger-types` skill into Codex or Claude Code on the current machine:
 
 ```bash
 swapper install-skill
 ```
 
-By default, it installs to:
+The command opens an interactive selector for Codex or Claude Code. If you choose Codex, it installs to:
 
 ```text
 ${CODEX_HOME:-~/.codex}/skills/generate-swagger-types
+```
+
+If you choose Claude Code, it installs to:
+
+```text
+${CLAUDE_CONFIG_DIR:-~/.claude}/skills/generate-swagger-types
+```
+
+To skip the prompt, pass `--agent`:
+
+```bash
+swapper install-skill --agent claude-code
 ```
 
 Optional flags:
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
-| `--dest` | No | `$CODEX_HOME/skills` or `~/.codex/skills` | Custom skill installation root |
-| `--force` | No | `false` | Overwrite the destination if the skill already exists |
+| `--agent` | No | Interactive selector in TTY; `codex` in non-interactive shells | Target agent. Supports `codex`, `claude-code`, and `claude` |
+| `--dest` | No | Depends on `--agent` | Custom skill installation root |
+| `--force` | No | `true` | Overwrite the destination if the skill already exists |
+| `--no-force` | No | `false` | Fail when the destination skill already exists |
 
 Examples:
 
 ```bash
-swapper install-skill --force
 swapper install-skill --dest ~/.codex/skills
+swapper install-skill --agent claude-code
+swapper install-skill --no-force
 ```
 
-Restart Codex after installation so the new skill can be loaded.
+Restart Codex or Claude Code after installation so the new skill can be loaded.
 
 ## Generation Behavior
 
