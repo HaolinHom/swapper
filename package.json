@@ -1,6 +1,6 @@
 {
   "name": "@aircan/swapper",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A CLI tool for generating TypeScript API functions and type definitions from Swagger/OpenAPI documents.",
   "type": "module",
   "main": "src/index.js",
